@@ -110,6 +110,27 @@ touchingTests = "touching tests" ~: TestList $
     , ([Pointing Koan.Right (p s b), Empty, Pointing Koan.Left (p s r)], Just False)
     ]
 
-allTests = TestList $ [basicTests, quantifierTests, touchingTests]
+pointingTests = "pointing tests" ~: TestList $
+  rulesWithKoans
+    ["da poi xunre cu farsni de poi blanu"]
+    -- Single stack
+    [ ([Stack [p s r, p s b]], Just True)
+    , ([Stack [p s b, p s r]], Just False)
+    , ([Stack [p s r, p s g, p s b]], Just True)
+    -- Pointing at a stack
+    , ([Pointing Koan.Right (p s r), Stack [p s g, p s b]], Just False)
+    , ([Pointing Koan.Right (p s r), Stack [p m g, p l b]], Just True)
+    , ([Pointing Koan.Right (p s r), Stack [p s b]], Just True)
+    , ([Stack [p s b], Pointing Koan.Left (p s r)], Just True)
+    , ([Pointing Koan.Left (p s r), Stack [p s b]], Just False)
+    , ([Stack [p s b], Pointing Koan.Right (p s r)], Just False)
+    -- Pointing at another pointing pyramid
+    , ([Pointing Koan.Right (p s r), Pointing Koan.Right (p s b)], Just True)
+    , ([Pointing Koan.Right (p s b), Pointing Koan.Left (p s r)], Just True)
+    , ([Pointing Koan.Left (p s r), Pointing Koan.Right (p s b)], Just False)
+    , ([Pointing Koan.Right (p s b), Pointing Koan.Right (p s r)], Just False)
+    ]
+
+allTests = TestList $ [basicTests, quantifierTests, touchingTests, pointingTests]
 
 main = runTestTT allTests

@@ -1,7 +1,7 @@
 module Selbri where
 
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Debug.Trace
 
 import JboProp (JboRel(..))
@@ -123,7 +123,36 @@ pencu k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
         else elem (j1, j2) $ touchingPairs (fromJust $ nth k i1) (fromJust $ nth k i2)
 pencu _ _ = False
 
--- Map from relations to selbri
+touchesGround :: Koan -> Sumti -> Bool
+touchesGround k (Sumti.Pyramid i j) =
+  fromMaybe False (do
+    part <- nth k i
+    case part of
+      Pointing _ _ -> return True
+      Stack ps ->
+        let heights = pyramidHeights (Stack ps) in
+        do
+          Koan.Pyramid z _ <- getPyramid k (Sumti.Pyramid i j)
+          height <- nth heights j
+          return (fromEnum z + 2 == height)
+    )
+
+farsni :: Koan -> [Sumti] -> Bool
+farsni k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
+  if i1 == i2
+    then j1 < j2
+    else
+      touchesGround k (Sumti.Pyramid i2 j2) &&
+      fromMaybe False (do
+        part <- nth k i1
+        return $ case part of
+          Stack _ -> False
+          Pointing Koan.Left _ -> i1 > i2
+          Pointing Koan.Right _ -> i1 < i2
+          _ -> False
+      )
+
+  -- Map from relations to selbri
 selbriForRel :: JboRel -> Maybe Selbri
 selbriForRel (Brivla "blanu") = Just blanu
 selbriForRel (Brivla "crino") = Just crino
@@ -136,4 +165,5 @@ selbriForRel (Brivla "pirmidi") = Just pirmidi
 selbriForRel (Brivla "sraji") = Just sraji
 selbriForRel (Brivla "pinta") = Just pinta
 selbriForRel (Brivla "pencu") = Just pencu
+selbriForRel (Brivla "farsni") = Just farsni
 selbriForRel _ = Nothing
