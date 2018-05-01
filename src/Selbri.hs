@@ -8,6 +8,7 @@ import JboProp (JboRel(..))
 
 import Koan
 import Sumti
+import Error (OrError)
 
 type Selbri = Koan -> [Sumti] -> Bool
 
@@ -97,8 +98,8 @@ widthProfile (Stack ps) _ =
 
 touchingPairs :: KoanPart -> KoanPart -> [(Int, Int)]
 touchingPairs x y =
-  let p1 = widthProfile x Koan.Right
-      p2 = widthProfile y Koan.Left in
+  let p1 = widthProfile x Rgt
+      p2 = widthProfile y Lft in
   snd $ foldl (\(mw, ps) ((w1, j1), (w2, j2)) ->
     let nw = w1 + w2 in
     if nw > mw
@@ -146,20 +147,20 @@ farsni k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
         part <- nth k i1
         return $ case part of
           Stack _ -> False
-          Pointing Koan.Left _ -> i1 > i2
-          Pointing Koan.Right _ -> i1 < i2
+          Pointing Lft _ -> i1 > i2
+          Pointing Rgt _ -> i1 < i2
           _ -> False
       )
 
-nenri :: Selbri
-nenri k [Sumti.Pyramid i1 _, Column i2] =
+pagbu :: Selbri
+pagbu k [Sumti.Pyramid i1 _, Column i2] =
   i1 == i2 &&
   (fromMaybe False $ do
     part <- nth k i2
     case part of
       Stack _ -> return True
       _ -> return False)
-nenri _ _ = False
+pagbu _ _ = False
 
 gapru :: Selbri
 gapru _ [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] = i1 == i2 && j1 > j2
@@ -173,21 +174,21 @@ cpana :: Selbri
 cpana k ss = gapru k ss && pencu k ss
 
 -- Map from relations to selbri
-selbriForRel :: JboRel -> Maybe Selbri
-selbriForRel (Brivla "blanu") = Just blanu
-selbriForRel (Brivla "crino") = Just crino
-selbriForRel (Brivla "xunre") = Just xunre
-selbriForRel (Brivla "pelxu") = Just pelxu
-selbriForRel (Brivla "barda") = Just barda
-selbriForRel (Brivla "norbra") = Just norbra
-selbriForRel (Brivla "cmalu") = Just cmalu
-selbriForRel (Brivla "pirmidi") = Just pirmidi
-selbriForRel (Brivla "sraji") = Just sraji
-selbriForRel (Brivla "pinta") = Just pinta
-selbriForRel (Brivla "pencu") = Just pencu
-selbriForRel (Brivla "farsni") = Just farsni
-selbriForRel (Brivla "nenri") = Just nenri
-selbriForRel (Brivla "gapru") = Just gapru
-selbriForRel (Brivla "cnita") = Just cnita
-selbriForRel (Brivla "cpana") = Just cpana
-selbriForRel _ = Nothing
+selbriForRel :: JboRel -> OrError Selbri
+selbriForRel (Brivla "blanu") = Right blanu
+selbriForRel (Brivla "crino") = Right crino
+selbriForRel (Brivla "xunre") = Right xunre
+selbriForRel (Brivla "pelxu") = Right pelxu
+selbriForRel (Brivla "barda") = Right barda
+selbriForRel (Brivla "norbra") = Right norbra
+selbriForRel (Brivla "cmalu") = Right cmalu
+selbriForRel (Brivla "pirmidi") = Right pirmidi
+selbriForRel (Brivla "sraji") = Right sraji
+selbriForRel (Brivla "pinta") = Right pinta
+selbriForRel (Brivla "pencu") = Right pencu
+selbriForRel (Brivla "farsni") = Right farsni
+selbriForRel (Brivla "pagbu") = Right pagbu
+selbriForRel (Brivla "gapru") = Right gapru
+selbriForRel (Brivla "cnita") = Right cnita
+selbriForRel (Brivla "cpana") = Right cpana
+selbriForRel s = Left ("unknown relation " ++ show s)

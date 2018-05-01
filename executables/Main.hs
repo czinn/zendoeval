@@ -10,10 +10,9 @@ main :: IO ()
 main = do
   s <- getLine
   case tersmu s of
-    Nothing -> putStrLn "error" 
-    Just rule -> do
-      putStrLn (show rule)
+    Left e -> putStrLn $ "Error: " ++ e
+    Right rule -> do
       case satisfiesRule rule koan of
-        Just True -> putStrLn "yes"
-        Just False -> putStrLn "no"
-        Nothing -> putStrLn "ask again later"
+        Right True -> putStrLn "yes"
+        Right False -> putStrLn "no"
+        Left e -> putStrLn $ "Error: " ++ e

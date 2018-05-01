@@ -7,17 +7,18 @@ import Koan
 import Sumti
 import ZendoParse (Rule)
 import Selbri (selbriForRel)
+import Error (OrError)
 
 import Control.Monad (foldM)
 import Data.Maybe (catMaybes)
 
-mapTerms :: [JboTerm] -> Bindful a (Maybe [a])
+mapTerms :: [JboTerm] -> Bindful a (OrError [a])
 mapTerms ts = do
   stuff <-
     mapM (\t ->
       case t of
-        BoundVar n -> fmap Just (binding n)
-        _ -> return Nothing
+        BoundVar n -> fmap Right (binding n)
+        _ -> return $ Left ("unknown term " ++ show t)
     ) ts
   return $ sequence stuff
 
@@ -27,7 +28,7 @@ evalQuant :: Maybe (Int -> JboProp)
           -> (Int -> JboProp)
           -> Koan
           -> ([Bool] -> Bool)
-          -> Bindful Sumti (Maybe Bool)
+          -> Bindful Sumti (OrError Bool)
 evalQuant d p k f =
   let
     any = fmap (fmap f . sequence . catMaybes) . sequence
@@ -37,19 +38,19 @@ evalQuant d p k f =
     fmap (\sumti ->
       withBinding sumti (\x -> do
         inDomain <- case d of
-          Nothing -> return (Just True)
+          Nothing -> return (Right True)
           Just d -> evalProp' (d x) k
         case inDomain of
-          Just True -> fmap Just $ evalProp' (p x) k
-          Just False -> return Nothing
-          Nothing -> return (Just Nothing)
+          Right True -> fmap Just $ evalProp' (p x) k
+          Right False -> return Nothing
+          Left e -> return $ Just $ Left e
         )
     ) sumti
 
-evalProp :: JboProp -> Koan -> Maybe Bool
+evalProp :: JboProp -> Koan -> OrError Bool
 evalProp p k = evalBindful (evalProp' p k)
 
-evalProp' :: JboProp -> Koan -> Bindful Sumti (Maybe Bool)
+evalProp' :: JboProp -> Koan -> Bindful Sumti (OrError Bool)
 evalProp' (Not p) k = do
   a <- evalProp' p k
   return $ not <$> a
@@ -79,9 +80,9 @@ evalProp' (Rel r ts) k = do
     selbri <- selbriForRel r 
     return $ selbri k ts
 
-evalProp' (NonLogConnected _ _ _) _ = return Nothing
-evalProp' (Modal _ _) _ = return Nothing
-evalProp' _ _ = return Nothing
+evalProp' (NonLogConnected _ _ _) _ = return $ Left "non-logical connectives not supported"
+evalProp' (Modal _ _) _ = return $ Left "modals not supported"
+evalProp' _ _ = return $ Left "some unknown element"
 
-satisfiesRule :: Rule -> Koan -> Maybe Bool
-satisfiesRule [p] k = evalProp p k
+satisfiesRule :: Rule -> Koan -> OrError Bool
+satisfiesRule ps k = fmap (all id) . sequence . fmap (flip evalProp $ k) $ ps
