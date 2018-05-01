@@ -155,6 +155,28 @@ columnTests = "column tests" ~: TestList $
     , ([Stack [p l r], Pointing Lft (p s g), Stack [p s b]], Right True)
     ]
 
-allTests = TestList $ [basicTests, touchingTests, pointingTests, columnTests]
+concreteColourSizeTests = "concrete colour/size tests" ~: TestList $
+  rulesWithKoans
+    ["pa da nilbra ro de poi pirmidi"]
+    [ ([Stack [p l r, p l b], Pointing Lft (p l g)], Right True)
+    , ([Stack [p l r, p m b], Pointing Lft (p l g)], Right False)
+    , ([Stack [p m r, p m b]], Right True)
+    ]
+  ++
+  rulesWithKoans
+    ["da se skari re de"]
+    [ ([Stack [p l r, p s b], Stack [p s r]], Right True)
+    , ([Stack [p l r, p s b], Stack [p s b]], Right True)
+    , ([Stack [p l r, p s b], Stack [p s g]], Right False)
+    , ([Stack [p l r, p s r], Stack [p s r]], Right False)
+    ]
+
+allTests = TestList $
+  [ basicTests
+  , touchingTests
+  , pointingTests
+  , columnTests
+  , concreteColourSizeTests
+  ]
 
 main = runTestTT allTests

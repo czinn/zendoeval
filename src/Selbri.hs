@@ -28,16 +28,16 @@ getPyramid _ _ = Nothing
 
 colourSelbri :: Colour -> Selbri
 colourSelbri c k [s] =
-    case getPyramid k s of
-      Just (Koan.Pyramid _ c') -> c == c'
-      Nothing -> False
+  fromMaybe False $ do
+    Koan.Pyramid _ c' <- getPyramid k s
+    return $ c == c'
 colourSelbri _ _ _ = False
 
 sizeSelbri :: Size -> Selbri
 sizeSelbri z k [s] =
-  case getPyramid k s of
-    Just (Koan.Pyramid z' _) -> z == z'
-    Nothing -> False
+  fromMaybe False $ do
+    Koan.Pyramid z' _ <- getPyramid k s
+    return $ z == z'
 sizeSelbri _ _ _ = False
 
 blanu = colourSelbri Blue
@@ -173,6 +173,14 @@ cnita _ _ = False
 cpana :: Selbri
 cpana k ss = gapru k ss && pencu k ss
 
+nilbra :: Selbri
+nilbra k [ConcreteSize z, p] = sizeSelbri z k [p]
+nilbra _ _ = False
+
+skari :: Selbri
+skari k [p, ConcreteColour c] = colourSelbri c k [p]
+skari _ _ = False
+
 -- Map from relations to selbri
 selbriForRel :: JboRel -> OrError Selbri
 selbriForRel (Brivla "blanu") = Right blanu
@@ -191,4 +199,6 @@ selbriForRel (Brivla "pagbu") = Right pagbu
 selbriForRel (Brivla "gapru") = Right gapru
 selbriForRel (Brivla "cnita") = Right cnita
 selbriForRel (Brivla "cpana") = Right cpana
+selbriForRel (Brivla "nilbra") = Right nilbra
+selbriForRel (Brivla "skari") = Right skari
 selbriForRel s = Left ("unknown relation " ++ show s)
