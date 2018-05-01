@@ -9,6 +9,7 @@ import ZendoParse (Rule)
 import Selbri (selbriForRel)
 
 import Control.Monad (foldM)
+import Data.Maybe (catMaybes)
 
 mapTerms :: [JboTerm] -> Bindful a (Maybe [a])
 mapTerms ts = do
@@ -29,21 +30,21 @@ evalQuant :: Maybe (Int -> JboProp)
           -> Bindful Sumti (Maybe Bool)
 evalQuant d p k f =
   let
-    any = fmap (fmap f . sequence) . sequence
+    any = fmap (fmap f . sequence . catMaybes) . sequence
     sumti = sumtiInKoan k
-    results = 
-      fmap (\sumti ->
-            withBinding sumti (\x -> do
-              inDomain <- case d of
-                Nothing -> return (Just True)
-                Just d -> evalProp' (d x) k
-              case inDomain of
-                Just True -> evalProp' (p x) k
-                _ -> return (Just False)
-              )
-            ) sumti
   in
-  any results
+  any $
+    fmap (\sumti ->
+      withBinding sumti (\x -> do
+        inDomain <- case d of
+          Nothing -> return (Just True)
+          Just d -> evalProp' (d x) k
+        case inDomain of
+          Just True -> fmap Just $ evalProp' (p x) k
+          Just False -> return Nothing
+          Nothing -> return (Just Nothing)
+        )
+    ) sumti
 
 evalProp :: JboProp -> Koan -> Maybe Bool
 evalProp p k = evalBindful (evalProp' p k)

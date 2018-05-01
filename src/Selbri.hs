@@ -23,7 +23,7 @@ getPyramid parts (Sumti.Pyramid i j) = do
     Stack pyramids -> nth pyramids j
     Pointing _ p -> return p
     Empty -> Nothing
--- getPyramid _ _ = Nothing
+getPyramid _ _ = Nothing
 
 colourSelbri :: Colour -> Selbri
 colourSelbri c k [s] =
@@ -54,11 +54,11 @@ pirmidi _ _ = False
 sraji k [Sumti.Pyramid i _] = case nth k i of
   Just (Stack _) -> True
   _ -> False 
--- sraji _ _ = False
+sraji _ _ = False
 pinta k [Sumti.Pyramid i _] = case nth k i of
   Just (Pointing _ _) -> True
   _ -> False 
--- pinta _ _ = False
+pinta _ _ = False
 
 -------------------------------------------------
 -- Touching logic; very prone to weird edge cases
@@ -108,7 +108,7 @@ touchingPairs x y =
         else (mw, ps)
   ) (0, []) $ zip p1 p2
 
-pencu :: Koan -> [Sumti] -> Bool
+pencu :: Selbri
 pencu k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
   if i1 > i2
     then pencu k [Sumti.Pyramid i2 j2, Sumti.Pyramid i1 j1]
@@ -125,7 +125,7 @@ pencu _ _ = False
 
 touchesGround :: Koan -> Sumti -> Bool
 touchesGround k (Sumti.Pyramid i j) =
-  fromMaybe False (do
+  fromMaybe False $ do
     part <- nth k i
     case part of
       Pointing _ _ -> return True
@@ -135,9 +135,8 @@ touchesGround k (Sumti.Pyramid i j) =
           Koan.Pyramid z _ <- getPyramid k (Sumti.Pyramid i j)
           height <- nth heights j
           return (fromEnum z + 2 == height)
-    )
 
-farsni :: Koan -> [Sumti] -> Bool
+farsni :: Selbri
 farsni k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
   if i1 == i2
     then j1 < j2
@@ -152,7 +151,17 @@ farsni k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
           _ -> False
       )
 
-  -- Map from relations to selbri
+nenri :: Selbri
+nenri k [Sumti.Pyramid i1 _, Column i2] =
+  i1 == i2 &&
+  (fromMaybe False $ do
+    part <- nth k i2
+    case part of
+      Stack _ -> return True
+      _ -> return False)
+nenri _ _ = False
+
+-- Map from relations to selbri
 selbriForRel :: JboRel -> Maybe Selbri
 selbriForRel (Brivla "blanu") = Just blanu
 selbriForRel (Brivla "crino") = Just crino
@@ -166,4 +175,5 @@ selbriForRel (Brivla "sraji") = Just sraji
 selbriForRel (Brivla "pinta") = Just pinta
 selbriForRel (Brivla "pencu") = Just pencu
 selbriForRel (Brivla "farsni") = Just farsni
+selbriForRel (Brivla "nenri") = Just nenri
 selbriForRel _ = Nothing

@@ -45,7 +45,7 @@ basicTests = "basic tests" ~: TestList $
     ]
   ++
   rulesWithKoans
-    ["da na blanu", "na ku ro da blanu"]
+    ["da poi pirmidi cu na blanu", "na ku ro da poi pirmidi cu blanu"]
     [ ([Stack [p l b, p s y]], Just True)
     , ([Stack [p l b]], Just False)
     , ([Stack [p s b], Stack [p m b]], Just False)
@@ -57,8 +57,7 @@ basicTests = "basic tests" ~: TestList $
     , ([Stack [p l g, p m y, p s b]], Just True)
     , ([], Just True)
     ]
-
-quantifierTests = "quantifier tests" ~: TestList $
+  ++
   rulesWithKoans
     ["pa da xunre"]
     [ ([Stack [p l r, p s b]], Just True)
@@ -131,6 +130,30 @@ pointingTests = "pointing tests" ~: TestList $
     , ([Pointing Koan.Right (p s b), Pointing Koan.Right (p s r)], Just False)
     ]
 
-allTests = TestList $ [basicTests, quantifierTests, touchingTests, pointingTests]
+columnTests = "column tests" ~: TestList $
+  rulesWithKoans
+    ["da se nenri re de"]
+    [ ([Stack [p l r, p s b]], Just True)
+    , ([Stack [p l r], Stack [p s b]], Just False)
+    , ([Stack [p l r, p m r, p s r], Stack [p s b]], Just False)
+    , ([Stack [p l r, p m r], Stack [p s b]], Just True)
+    ]
+  ++
+  rulesWithKoans
+    ["da nenri de"]
+    [ ([Stack [p l r]], Just True)
+    , ([Stack [p l r], Pointing Koan.Left (p s r)], Just True)
+    , ([Pointing Koan.Right (p l r), Pointing Koan.Left (p s r)], Just False)
+    ]
+  ++
+  rulesWithKoans
+    ["re da nenri de", "re da sraji"]
+    [ ([Stack [p l r, p s b]], Just True)
+    , ([Stack [p l r], Stack [p s b]], Just True)
+    , ([Stack [p l r, p m r], Stack [p s b]], Just False)
+    , ([Stack [p l r], Pointing Koan.Left (p s g), Stack [p s b]], Just True)
+    ]
+
+allTests = TestList $ [basicTests, touchingTests, pointingTests, columnTests]
 
 main = runTestTT allTests
