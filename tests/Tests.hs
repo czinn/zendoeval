@@ -171,12 +171,42 @@ concreteColourSizeTests = "concrete colour/size tests" ~: TestList $
     , ([Stack [p l r, p s r], Stack [p s r]], Right False)
     ]
 
+meksoTests = "mekso tests" ~: TestList $
+  rulesWithKoans
+    ["su'o re da pirmidi"]
+    [ ([Stack [p l r]], Right False)
+    , ([Stack [p l r, p m b]], Right True)
+    , ([Stack [p l r, p m b, p s g]], Right True)
+    ]
+  ++
+  rulesWithKoans
+    ["su'e re da pirmidi"]
+    [ ([Stack [p l r]], Right True)
+    , ([Stack [p l r, p m b]], Right True)
+    , ([Stack [p l r, p m b, p s g]], Right False)
+    ]
+  ++
+  rulesWithKoans
+    ["me'i re da pirmidi"]
+    [ ([Stack [p l r]], Right True)
+    , ([Stack [p l r, p m b]], Right False)
+    , ([Stack [p l r, p m b, p s g]], Right False)
+    ]
+  ++
+  rulesWithKoans
+    ["za'u re da pirmidi"]
+    [ ([Stack [p l r]], Right False)
+    , ([Stack [p l r, p m b]], Right False)
+    , ([Stack [p l r, p m b, p s g]], Right True)
+    ]
+
 allTests = TestList $
   [ basicTests
   , touchingTests
   , pointingTests
   , columnTests
   , concreteColourSizeTests
+  , meksoTests
   ]
 
 main = runTestTT allTests
