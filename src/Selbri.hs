@@ -161,6 +161,17 @@ nenri k [Sumti.Pyramid i1 _, Column i2] =
       _ -> return False)
 nenri _ _ = False
 
+gapru :: Selbri
+gapru _ [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] = i1 == i2 && j1 > j2
+gapru _ _ = False
+
+cnita :: Selbri
+cnita _ [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] = i1 == i2 && j1 < j2
+cnita _ _ = False
+
+cpana :: Selbri
+cpana k ss = gapru k ss && pencu k ss
+
 -- Map from relations to selbri
 selbriForRel :: JboRel -> Maybe Selbri
 selbriForRel (Brivla "blanu") = Just blanu
@@ -176,4 +187,7 @@ selbriForRel (Brivla "pinta") = Just pinta
 selbriForRel (Brivla "pencu") = Just pencu
 selbriForRel (Brivla "farsni") = Just farsni
 selbriForRel (Brivla "nenri") = Just nenri
+selbriForRel (Brivla "gapru") = Just gapru
+selbriForRel (Brivla "cnita") = Just cnita
+selbriForRel (Brivla "cpana") = Just cpana
 selbriForRel _ = Nothing
