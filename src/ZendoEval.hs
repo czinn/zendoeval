@@ -127,4 +127,8 @@ evalProp' (Modal _ _) _ = return $ Left "modals not supported"
 evalProp' _ _ = return $ Left "some unknown element"
 
 satisfiesRule :: Rule -> Koan -> OrError Bool
-satisfiesRule ps k = fmap (all id) . sequence . fmap (flip evalProp $ k) $ ps
+satisfiesRule ps k = evalBindful $ foldM (\state p ->
+    case state of
+      Right True -> evalProp' p k
+      other -> return other
+  ) (Right True) ps
