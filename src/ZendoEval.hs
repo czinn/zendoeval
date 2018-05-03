@@ -2,7 +2,7 @@ module ZendoEval where
 
 import JboProp
 import Logic
-import Bindful
+import BindfulTerm
 import Koan
 import Sumti
 import ZendoParse (Rule)
@@ -51,15 +51,15 @@ evalMex mex = Left $ "unknown mex expression " ++ show mex
 boolCount :: [Bool] -> Int
 boolCount = foldl (\x y -> x + if y then 1 else 0) 0
 
-mapTerms :: [JboTerm] -> Bindful a (OrError [a])
-mapTerms ts = do
-  stuff <-
-    mapM (\t ->
-      case t of
-        BoundVar n -> fmap Right (binding n)
-        _ -> return $ Left ("unknown term " ++ show t)
-    ) ts
-  return $ sequence stuff
+mapTerms :: [JboTerm] -> BindfulTerm a (OrError [a])
+mapTerms ts =
+  fmap sequence .
+  mapM (\t -> do
+    bound <- binding t
+    return $ case bound of
+      Just b -> Right b
+      Nothing -> Left ("unbound term " ++ show t)
+  ) $ ts
 
 -- Evaluates a quantified statement by substituting in all possible objects from the
 -- universe (Koan) and then applying f to the list of Bools.
@@ -67,7 +67,7 @@ evalQuant :: Maybe (Int -> JboProp)
           -> (Int -> JboProp)
           -> Koan
           -> ([Bool] -> Bool)
-          -> Bindful Sumti (OrError Bool)
+          -> BindfulTerm Sumti (OrError Bool)
 evalQuant d p k f =
   let
     any = fmap (fmap f . sequence . catMaybes) . sequence
@@ -75,12 +75,17 @@ evalQuant d p k f =
   in
   any $
     fmap (\sumti ->
-      withBinding sumti (\x -> do
+      withBinding [ BoundVar n | n <- [1..] ] sumti (\x ->
+        let n = case x of
+                  BoundVar n -> n
+                  _ -> error $ "wat"
+        in
+        do
         inDomain <- case d of
           Nothing -> return (Right True)
-          Just d -> evalProp' (d x) k
+          Just d -> evalProp' (d n) k
         case inDomain of
-          Right True -> fmap Just $ evalProp' (p x) k
+          Right True -> fmap Just $ evalProp' (p n) k
           Right False -> return Nothing
           Left e -> return $ Just $ Left e
         )
@@ -89,10 +94,9 @@ evalQuant d p k f =
 evalProp :: JboProp -> Koan -> OrError Bool
 evalProp p k = evalBindful (evalProp' p k)
 
-evalProp' :: JboProp -> Koan -> Bindful Sumti (OrError Bool)
-evalProp' (Not p) k = do
-  a <- evalProp' p k
-  return $ not <$> a
+evalProp' :: JboProp -> Koan -> BindfulTerm Sumti (OrError Bool)
+
+evalProp' (Not p) k = fmap (fmap not) (evalProp' p k)
 
 evalProp' (Connected c p q) k = do
   a <- evalProp' p k
