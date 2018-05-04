@@ -61,8 +61,8 @@ pinta k [Sumti.Pyramid i _] = case nth k i of
   _ -> False 
 pinta _ _ = False
 
--------------------------------------------------
--- Touching logic; very prone to weird edge cases
+barna _ [Spot i1 j1, Sumti.Pyramid i2 j2] = i1 == i2 && j1 == j2
+barna _ _ = False
 
 -- Produces the height of its tip above the ground for each pyramid in the
 -- stack.
@@ -109,21 +109,6 @@ touchingPairs x y =
         else (mw, ps)
   ) (0, []) $ zip p1 p2
 
-pencu :: Selbri
-pencu k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
-  if i1 > i2
-    then pencu k [Sumti.Pyramid i2 j2, Sumti.Pyramid i1 j1]
-    else if i2 - i1 >= 2 || (i1 == i2 && abs (j1 - j2) >= 2)
-      then False
-      else if i1 == i2
-        then
-          let heights = pyramidHeights (fromJust $ nth k i1)
-              h1 = fromJust $ nth heights j1
-              h2 = fromJust $ nth heights j2 in
-          abs (h1 - h2) == 1
-        else elem (j1, j2) $ touchingPairs (fromJust $ nth k i1) (fromJust $ nth k i2)
-pencu _ _ = False
-
 touchesGround :: Koan -> Sumti -> Bool
 touchesGround k (Sumti.Pyramid i j) =
   fromMaybe False $ do
@@ -137,7 +122,22 @@ touchesGround k (Sumti.Pyramid i j) =
           height <- nth heights j
           return (fromEnum z + 2 == height)
 
-farsni :: Selbri
+pencu k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
+  if i1 > i2
+    then pencu k [Sumti.Pyramid i2 j2, Sumti.Pyramid i1 j1]
+    else if i2 - i1 >= 2 || (i1 == i2 && abs (j1 - j2) >= 2)
+      then False
+      else if i1 == i2
+        then
+          let heights = pyramidHeights (fromJust $ nth k i1)
+              h1 = fromJust $ nth heights j1
+              h2 = fromJust $ nth heights j2 in
+          abs (h1 - h2) == 1
+        else elem (j1, j2) $ touchingPairs (fromJust $ nth k i1) (fromJust $ nth k i2)
+pencu k [Sumti.Pyramid i j, Ground] = touchesGround k (Sumti.Pyramid i j)
+pencu k [Ground, Sumti.Pyramid i j] = touchesGround k (Sumti.Pyramid i j)
+pencu _ _ = False
+
 farsni k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
   if i1 == i2
     then j1 < j2
@@ -151,8 +151,8 @@ farsni k [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] =
           Pointing Rgt _ -> i1 < i2
           _ -> False
       )
+farsni _ _ = False
 
-pagbu :: Selbri
 pagbu k [Sumti.Pyramid i1 _, Column i2] =
   i1 == i2 &&
   (fromMaybe False $ do
@@ -162,24 +162,26 @@ pagbu k [Sumti.Pyramid i1 _, Column i2] =
       _ -> return False)
 pagbu _ _ = False
 
-gapru :: Selbri
 gapru _ [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] = i1 == i2 && j1 > j2
 gapru _ _ = False
-
-cnita :: Selbri
 cnita _ [Sumti.Pyramid i1 j1, Sumti.Pyramid i2 j2] = i1 == i2 && j1 < j2
 cnita _ _ = False
 
-cpana :: Selbri
 cpana k ss = gapru k ss && pencu k ss
 
-nilbra :: Selbri
 nilbra k [ConcreteSize z, p] = sizeSelbri z k [p]
 nilbra _ _ = False
-
-skari :: Selbri
 skari k [p, ConcreteColour c] = colourSelbri c k [p]
 skari _ _ = False
+
+zmadu k [x, y, Property p] = p k x > p k y
+zmadu _ _ = False
+mleca k [x, y, Property p] = p k x < p k y
+mleca _ _ = False
+traji k [x, Property p] = not . any id $ do
+  y <- sumtiInKoan k
+  return $ p k x < p k y
+traji _ _ = False
 
 -- Map from relations to selbri
 selbriForRel :: JboRel -> OrError Selbri
@@ -193,6 +195,7 @@ selbriForRel (Brivla "cmalu") = Right cmalu
 selbriForRel (Brivla "pirmidi") = Right pirmidi
 selbriForRel (Brivla "sraji") = Right sraji
 selbriForRel (Brivla "pinta") = Right pinta
+selbriForRel (Brivla "barna") = Right barna
 selbriForRel (Brivla "pencu") = Right pencu
 selbriForRel (Brivla "farsni") = Right farsni
 selbriForRel (Brivla "pagbu") = Right pagbu
@@ -201,4 +204,7 @@ selbriForRel (Brivla "cnita") = Right cnita
 selbriForRel (Brivla "cpana") = Right cpana
 selbriForRel (Brivla "nilbra") = Right nilbra
 selbriForRel (Brivla "skari") = Right skari
+selbriForRel (Brivla "zmadu") = Right zmadu
+selbriForRel (Brivla "mleca") = Right mleca
+selbriForRel (Brivla "traji") = Right traji
 selbriForRel s = Left ("unknown relation " ++ show s)

@@ -7,6 +7,7 @@ import Koan
 import Sumti
 import ZendoParse (Rule)
 import Selbri (selbriForRel)
+import FixConstant (fixConstant)
 import Error (OrError)
 import JboSyntax (Numeral(..), AbsMex(..))
 
@@ -69,38 +70,25 @@ evalQuant :: Maybe (Int -> JboProp)
           -> ([Bool] -> Bool)
           -> BindfulTerm Sumti (OrError Bool)
 evalQuant d p k f =
-  let
-    any = fmap (fmap f . sequence . catMaybes) . sequence
-    sumti = sumtiInKoan k
-  in
-  any $
-    fmap (\sumti ->
-      withBinding [ BoundVar n | n <- [1..] ] sumti (\x ->
-        let n = case x of
-                  BoundVar n -> n
-                  _ -> error $ "wat"
-        in
-        do
-        inDomain <- case d of
-          Nothing -> return (Right True)
-          Just d -> evalProp' (d n) k
-        case inDomain of
-          Right True -> fmap Just $ evalProp' (p n) k
-          Right False -> return Nothing
-          Left e -> return $ Just $ Left e
-        )
-    ) sumti
+  fmap (fmap f . sequence . catMaybes) . sequence .
+  fmap (\sumti ->
+    withBoundVarBinding sumti (\n ->
+      do
+      inDomain <- case d of
+        Nothing -> return (Right True)
+        Just d -> evalProp (d n) k
+      case inDomain of
+        Right True -> fmap Just $ evalProp (p n) k
+        Right False -> return Nothing
+        Left e -> return $ Just $ Left e
+      )
+  ) $ sumtiInKoan k
 
-evalProp :: JboProp -> Koan -> OrError Bool
-evalProp p k = evalBindful (evalProp' p k)
-
-evalProp' :: JboProp -> Koan -> BindfulTerm Sumti (OrError Bool)
-
-evalProp' (Not p) k = fmap (fmap not) (evalProp' p k)
-
-evalProp' (Connected c p q) k = do
-  a <- evalProp' p k
-  b <- evalProp' q k
+evalProp :: JboProp -> Koan -> BindfulTerm Sumti (OrError Bool)
+evalProp (Not p) k = fmap (fmap not) (evalProp p k)
+evalProp (Connected c p q) k = do
+  a <- evalProp p k
+  b <- evalProp q k
   return $ do
     a <- a
     b <- b
@@ -110,29 +98,32 @@ evalProp' (Connected c p q) k = do
       Impl -> (\x y -> (not x) || y)
       Equiv -> ( == )
       ) a b
-
-evalProp' (Quantified (LojQuantifier Exists) d p) k = evalQuant d p k (any id)
-evalProp' (Quantified (LojQuantifier Forall) d p) k = evalQuant d p k (all id)
-evalProp' (Quantified (LojQuantifier (Exactly n)) d p) k = evalQuant d p k ((== n) . boolCount)
-evalProp' (Quantified (MexQuantifier mex) d p) k =
+evalProp (Quantified (LojQuantifier Exists) d p) k = evalQuant d p k (any id)
+evalProp (Quantified (LojQuantifier Forall) d p) k = evalQuant d p k (all id)
+evalProp (Quantified (LojQuantifier (Exactly n)) d p) k = evalQuant d p k ((== n) . boolCount)
+evalProp (Quantified (MexQuantifier mex) d p) k =
   case evalMex mex of
     Right f -> evalQuant d p k (f . boolCount)
     Left e -> return $ Left e
-
-evalProp' (Rel r ts) k = do
+evalProp (Rel r [Constant n a]) _ =
+  case fixConstant r of
+    Right bound -> do
+      () <- bind (Constant n a) bound
+      return $ Right True
+    Left e -> return $ Left e
+evalProp (Rel r ts) k = do
   ts <- mapTerms ts
   return $ do
     ts <- ts
     selbri <- selbriForRel r 
     return $ selbri k ts
-
-evalProp' (NonLogConnected _ _ _) _ = return $ Left "non-logical connectives not supported"
-evalProp' (Modal _ _) _ = return $ Left "modals not supported"
-evalProp' _ _ = return $ Left "some unknown element"
+evalProp (NonLogConnected _ _ _) _ = return $ Left "non-logical connectives not supported"
+evalProp (Modal _ _) _ = return $ Left "modals not supported"
+evalProp _ _ = return $ Left "some unknown element"
 
 satisfiesRule :: Rule -> Koan -> OrError Bool
 satisfiesRule ps k = evalBindful $ foldM (\state p ->
     case state of
-      Right True -> evalProp' p k
+      Right True -> evalProp p k
       other -> return other
   ) (Right True) ps

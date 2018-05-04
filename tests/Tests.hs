@@ -68,6 +68,16 @@ basicTests = "basic tests" ~: TestList $
     , ([Stack [p m r]], Right True)
     ]
 
+spotTests = "spot tests" ~: TestList $
+  rulesWithKoans
+    ["ci da barna de poi xunre"]
+    [ ([Stack [p l r, p s b]], Right True)
+    , ([Stack [p m r, p s b, p s r]], Right True)
+    , ([Stack [p m r, p s b]], Right False)
+    , ([Stack [p m r], Pointing Lft (p s r)], Right True)
+    , ([Stack [p l r, p s r]], Right False)
+    ]
+
 touchingTests = "touching tests" ~: TestList $
   rulesWithKoans
     ["da poi xunre cu pencu de poi blanu"]
@@ -200,13 +210,174 @@ meksoTests = "mekso tests" ~: TestList $
     , ([Stack [p l r, p m b, p s g]], Right True)
     ]
 
+groundTests = "ground tests" ~: TestList $
+  rulesWithKoans
+    ["da poi xunre cu pencu lo loldi"]
+    [ ([Stack [p l r]], Right True)
+    , ([Stack [p s b, p l r]], Right True)
+    , ([Stack [p s b, p s r]], Right False)
+    , ([Stack [p s b, p s r], Pointing Lft (p l r)], Right True)
+    ]
+
+comparisonTests = "comparison tests" ~: TestList $
+  rulesWithKoans
+    [ "da poi xunre cu zmadu ro de poi blanu ku'o lo ka barda"
+    , "da poi xunre cu se mleca ro de poi blanu ku'o lo ka barda" ]
+    [ ([Stack [p l r, p s b]], Right True)
+    , ([Stack [p l r, p l b]], Right False)
+    , ([Stack [p l r, p m b, p s b, p l g]], Right True)
+    , ([Stack [p l r, p l b, p s b]], Right False)
+    ]
+  ++
+  rulesWithKoans
+    [ "da poi xunre cu zmadu ro de poi blanu ku'o lo ka galtu"
+    , "da poi xunre cu mleca ro de poi blanu ku'o lo ka dizlo" ]
+    [ ([Stack [p l r, p s b]], Right False)
+    , ([Stack [p l b, p s r]], Right True)
+    , ([Stack [p s r], Stack [p l b]], Right False)
+    , ([Stack [p l g, p s r], Stack [p l b]], Right True)
+    ]
+
+-- Tests for every rule given on http://charleszinn.ca/blog/lojban-zendo/
+-- The tests are not especially thorough in verifying that the semantics of every rule are correct;
+-- they simply demonstrate a positive and negative example for each of the rules.
+blogTests = "blog tests" ~: TestList $
+  -- Logical Quantified Existential Variables
+  ruleWithKoans "da xunre"
+    [ ([Stack [p s r]], Right True), ([Stack [p s b]], Right False) ]
+  :
+  ruleWithKoans "pa da xunre"
+    [ ([Stack [p s r]], Right True), ([Stack [p m r, p s r]], Right False) ]
+  :
+  ruleWithKoans "re da xunre"
+    [ ([Stack [p m r, p s r]], Right True), ([Stack [p s r]], Right False) ]
+  :
+  ruleWithKoans "su'o re da xunre"
+    [ ([Stack [p l r, p m r, p s r]], Right True), ([Stack [p s r, p s b]], Right False) ]
+  :
+  ruleWithKoans "no da xunre"
+    [ ([Stack [p s b]], Right True), ([Stack [p s r]], Right False) ]
+  :
+  ruleWithKoans "ro da poi pirmidi ku'o xunre" -- originally "ro da xunre"
+    [ ([Stack [p m r, p s r]], Right True), ([Stack [p m r, p s b]], Right False) ]
+  :
+  ruleWithKoans "da farsni de"
+    [ ([Stack [p s r, p s r]], Right True), ([Stack [p s r], Stack [p s r]], Right False) ]
+  :
+  ruleWithKoans "no da farsni su'o re de"
+    [ ([Stack [p m r, p s r]], Right True), ([Stack [p l r, p m r, p s r]], Right False) ]
+  :
+  ruleWithKoans "da farsni re de"
+    [ ([Stack [p l r, p m r, p s r]], Right True), ([Stack [p m r, p s r]], Right False) ]
+  :
+  rulesWithKoans
+    [ "da poi pirmidi ku'o farsni no de" -- originally "da farsni no de"
+    , "da poi pirmidi ku'o no de zo'u da farsni de" -- originally "da no de zo'u da farsni de"
+    ]
+    [ ([Stack [p s r], Pointing Lft (p s r)], Right True)
+    , ([Pointing Rgt (p s r), Pointing Lft (p s r)], Right False) ]
+  ++
+  rulesWithKoans
+    [ "no de se farsni da"
+    , "no de da zo'u da farsni de" ]
+    [ ([Stack [p s r], Pointing Rgt (p s r)], Right True)
+    , ([Stack [p s r], Pointing Lft (p s r)], Right False) ]
+  ++
+  -- Restrictive Relative Clauses
+  ruleWithKoans "ro da poi blanu ku'o sraji"
+    [ ([Stack [p m b, p s b]], Right True), ([Stack [p m b], Pointing Lft (p s b)], Right False) ]
+  :
+  ruleWithKoans "ro da poi farsni de ku'o xunre"
+    [ ([Stack [p s b], Pointing Lft (p s r)], Right True)
+    , ([Stack [p s r], Pointing Lft (p s b)], Right False) ]
+  :
+  ruleWithKoans "da poi pirmidi ku'o pencu de poi farsni pa di" -- originally "da pencu de poi farsni pa di"
+    [ ([Stack [p s r], Pointing Rgt (p s r), Empty, Stack [p s r]], Right True)
+    , ([Stack [p s r], Empty, Pointing Rgt (p s r), Empty, Stack [p s r]], Right False)
+    , ([Stack [p s r], Pointing Rgt (p s r), Empty, Stack [p s r], Stack [p s r]], Right False) ]
+  :
+  -- Logical Connectives
+  ruleWithKoans "da sraji gi'e blanu"
+    [ ([Stack [p s b]], Right True), ([Stack [p s g], Pointing Lft (p s b)], Right False) ]
+  :
+  ruleWithKoans "da sraji gi'a blanu"
+    [ ([Stack [p s g], Pointing Lft (p s b)], Right True), ([Pointing Lft (p s g)], Right False) ]
+  :
+  ruleWithKoans "da poi pirmidi ku'o sraji na gi'e nai blanu" -- originally "da sraji na gi'e nai blanu"
+    [ ([Stack [p s g], Pointing Lft (p s b)], Right False), ([Pointing Lft (p s g)], Right True) ]
+  :
+  ruleWithKoans "da poi pirmidi ku'o sraji gi'o blanu" -- originally "da sraji gi'o blanu"
+    [ ([Stack [p s b]], Right True), ([Pointing Lft (p s g)], Right True), ([Stack [p s g]], Right False) ]
+  :
+  ruleWithKoans "ro da poi pirmidi ku'o sraji gi'o blanu" -- originally "ro da sraji gi'o blanu"
+    [ ([Stack [p s b]], Right True), ([Pointing Lft (p s g)], Right True), ([Stack [p s g]], Right False) ]
+  :
+  rulesWithKoans ["ro da barda na gi'a xunre", "ro da poi barda ku'o xunre"]
+    [ ([Stack [p l r, p s g]], Right True), ([Stack [p l g, p s r]], Right False) ]
+  ++
+  ruleWithKoans "da sraji .i jo no de blanu"
+    [ ([Stack [p l r]], Right True), ([Pointing Lft (p s b)], Right True), ([Stack [p s b]], Right False) ]
+  :
+  ruleWithKoans "ro da poi pirmidi ku'o blanu gi'a xunre gi'e barda" -- originally "ro da blanu gi'a xunre gi'e barda"
+    [ ([Stack [p l r, p l b]], Right True), ([Stack [p l g, p l b]], Right False) ]
+  :
+  ruleWithKoans "ro da poi pirmidi ku'o blanu gi'e barda gi'a xunre" -- originally "ro da blanu gi'e barda gi'a xunre"
+    [ ([Stack [p l b, p s r]], Right True), ([Stack [p l r, p s b]], Right False) ]
+  :
+  -- Comparisons
+  ruleWithKoans "da poi pirmidi ku'o zmadu de poi pirmidi ku'o lo ka barda" -- originally "da zmadu de lo ka barda"
+    [ ([Stack [p m r, p s r]], Right True), ([Stack [p m r, p m r]], Right False) ]
+  :
+  ruleWithKoans "da poi xunre ku'o zmadu de poi blanu ku'o lo ka barda"
+    [ ([Stack [p l b, p m r, p s b]], Right True), ([Stack [p m r, p m b]], Right False) ]
+  :
+  ruleWithKoans "da poi xunre ku'o zmadu ro de poi blanu ku'o lo ka barda"
+    [ ([Stack [p m r, p s b]], Right True), ([Stack [p l b, p m r, p s b]], Right False) ]
+  :
+  ruleWithKoans "da poi traji lo ka galtu ku'o xunre"
+    [ ([Stack [p s b, p s r]], Right True), ([Stack [p s b, p s r], Stack [p l g]], Right False) ]
+  :
+  -- Sample Rules
+  ruleWithKoans "su'o re da pelxu"
+    [ ([Stack [p s y, p m y]], Right True), ([Stack [p s b, p m b]], Right False) ]
+  :
+  ruleWithKoans "re da blanu gi'a cmalu"
+    [ ([Stack [p l g, p m b, p s r]], Right True), ([Stack [p l b, p m b, p s r]], Right False) ]
+  :
+  ruleWithKoans "no da norbra gi'e crino"
+    [ ([Stack [p l g, p m b]], Right True), ([Stack [p l b, p m g]], Right False) ]
+  :
+  ruleWithKoans "da se skari su'o re de"
+    [ ([Stack [p l g, p m b, p s g]], Right True), ([Stack [p l g, p m b, p s r]], Right False) ]
+  :
+  ruleWithKoans "ci da barna de poi xunre"
+    [ ([Stack [p m r, p s b, p s r]], Right True) , ([Stack [p m r, p s b]], Right False) ]
+  :
+  ruleWithKoans "pa da nilbra ro de poi sraji"
+    [ ([Stack [p m r, p m b], Pointing Lft (p s g)], Right True)
+    , ([Stack [p m r, p s g], Pointing Lft (p m b)], Right False) ]
+  :
+  ruleWithKoans "da poi blanu ku'o pencu lo loldi"
+    [ ([Stack [p l b, p s r]], Right True), ([Stack [p l r, p s b]], Right False) ]
+  :
+  ruleWithKoans "da farsni de poi mleca da lo ka barda"
+    [ ([Stack [p l b, p s r]], Right True), ([Stack [p s r, p l b]], Right False) ]
+  :
+  ruleWithKoans "ro da poi pinta ku'o farsni de poi sraji"
+    [ ([Stack [p m r], Pointing Lft (p s g)], Right True), ([Stack [p m r], Pointing Rgt (p s g)], Right False) ]
+  : []
+
 allTests = TestList $
   [ basicTests
+  , spotTests
   , touchingTests
   , pointingTests
   , columnTests
   , concreteColourSizeTests
   , meksoTests
+  , groundTests
+  , comparisonTests
+  , blogTests
   ]
 
 main = runTestTT allTests
