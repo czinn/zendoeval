@@ -23,7 +23,9 @@ library
 
 executable zendoparser
   main-is:             Main.hs
-  build-depends:       base >=4.10 && <4.11, zendoparser, mtl >= 2.0, containers >= 0.5, tersmu >= 0.2.2
+  build-depends:       base >=4.10 && <4.11, zendoparser, mtl >= 2.0, containers >= 0.5, tersmu >= 0.2.2,
+                       random >= 1.1, MonadRandom >= 0.5, random-shuffle >= 0.0.3
+  other-modules:       KoanGeneration RuleGeneration
   hs-source-dirs:      executables
   default-language:    Haskell2010
 
