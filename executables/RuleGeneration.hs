@@ -75,21 +75,21 @@ qualifyVariable v = do
     ]
   back <- pickWeighted
     [ (10, "")
-    , (2, "poi blanu ku'o")
-    , (2, "poi crino ku'o")
-    , (2, "poi xunre ku'o")
-    , (2, "poi pelxu ku'o")
-    , (2, "poi barda ku'o")
-    , (2, "poi norbra ku'o")
-    , (2, "poi cmalu ku'o")
-    , (2, "poi sraji ku'o")
-    , (2, "poi pinta ku'o")
-    , (4, "poi farsni da ku'o")
-    , (1, "poi pencu da poi pirmidi ku'o ku'o")
-    , (1, "poi traji lo ka barda ku'o")
-    , (1, "poi traji lo ka galtu ku'o")
+    , (2, " poi blanu ku'o")
+    , (2, " poi crino ku'o")
+    , (2, " poi xunre ku'o")
+    , (2, " poi pelxu ku'o")
+    , (2, " poi barda ku'o")
+    , (2, " poi norbra ku'o")
+    , (2, " poi cmalu ku'o")
+    , (2, " poi sraji ku'o")
+    , (2, " poi pinta ku'o")
+    , (4, " poi farsni da ku'o")
+    , (1, " poi pencu da poi pirmidi ku'o ku'o")
+    , (1, " poi traji lo ka barda ku'o")
+    , (1, " poi traji lo ka galtu ku'o")
     ]
-  return $ front ++ " " ++ v ++ " " ++ back
+  return $ front ++ " " ++ v ++ back
 
 sentence :: (RandomGen g) => () -> Rand g String
 sentence () = do

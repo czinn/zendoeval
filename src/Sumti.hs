@@ -2,8 +2,8 @@ module Sumti where
 
 import Koan
 
-data Sumti =
-    Pyramid Int Int -- index of KoanPart, index in stack
+data Sumti
+  = Pyramid Int Int -- index of KoanPart, index in stack
   | Spot Int Int    -- spot on pyramid at corresponding indexes
   | Column Int      -- index of KoanPart. Use only for Stacks
   | ConcreteColour Colour
