@@ -80,35 +80,38 @@ doGame ruleString rule koans =
           "guess" ->
             case tersmu arg of
               Right theirRule -> do
-                ce <- evalRandIO $ counterexample (satisfiesRule rule) (satisfiesRule theirRule)
+                -- Try to find a counterexample in the existing koans first
+                ce <- evalRandIO $ counterexampleFromList (map (return . fst) koans) (satisfiesRule rule) (satisfiesRule theirRule)
                 case ce of
-                  Right (Just koan) -> doRound $ (evalKoanWithRule koan) : koans
+                  Right (Just koan) -> notify $ "This koan already disproves that rule: " ++ showKoan koan
                   Right (Nothing) -> do
-                    putStrLn "That looks like my rule!"
-                    putStrLn $ "My rule was: " ++ ruleString
-                  Left e -> do
-                    putStrLn $ "Error parsing rule: " ++ e
-                    doRound koans
-              Left e -> do
-                putStrLn $ "Error parsing rule: " ++ e
-                doRound koans
-          "build" -> do
+                    -- Try to find a new counterexample
+                    ce <- evalRandIO $ counterexample (satisfiesRule rule) (satisfiesRule theirRule)
+                    case ce of
+                      Right (Just koan) -> doRound $ (evalKoanWithRule koan) : koans
+                      Right (Nothing) -> do
+                        putStrLn "That looks like my rule!"
+                        putStrLn $ "My rule was: " ++ ruleString
+                      Left e -> notify $ "Error evaluating rule: " ++ e
+                  Left e -> notify $ "Error evaluating rule: " ++ e
+              Left e -> notify $ "Error parsing rule: " ++ e
+          "build" ->
             case parseKoan arg of
               Just koan -> doRound $ (evalKoanWithRule koan) : koans
-              Nothing -> do
-                putStrLn "Error parsing koan"
-                doRound koans
-          "end" -> do
-            putStrLn $ "My rule was: " ++ ruleString
-          _ -> do
-            putStrLn "Try 'build' or 'guess' or 'end'"
-            doRound koans
+              Nothing -> notify "Error parsing koan"
+          "end" -> putStrLn $ "My rule was: " ++ ruleString
+          _ -> notify "Try 'build' or 'guess' or 'end'"
+      where notify :: String -> IO ()
+            notify s = do
+              putStrLn s
+              doRound koans
 
 main :: IO ()
 main = do
   ruleString <- evalRandIO $ rule ()
-  let rule = fromOrError $ tersmu ruleString in do
-    positiveExample <- fmap (fromJust . fromOrError) $ evalRandIO $ counterexample (satisfiesRule rule) (\_ -> Right False)
-    negativeExample <- fmap (fromJust . fromOrError) $ evalRandIO $ counterexample (satisfiesRule rule) (\_ -> Right True)
+  let rule = fromOrError $ tersmu ruleString
+      forceCounterexample f = fmap (fromJust . fromOrError) $ evalRandIO $ counterexample (satisfiesRule rule) f in do
+    positiveExample <- forceCounterexample (\_ -> Right False)
+    negativeExample <- forceCounterexample (\_ -> Right True)
     -- print ruleString
     doGame ruleString rule [(positiveExample, True), (negativeExample, False)]

@@ -6,8 +6,8 @@ data Sumti
   = Pyramid Int Int -- index of KoanPart, index in stack
   | Spot Int Int    -- spot on pyramid at corresponding indexes
   | Column Int      -- index of KoanPart. Use only for Stacks
-  | ConcreteColour Colour
-  | ConcreteSize Size
+  | SumtiColour Colour
+  | SumtiSize Size
   | Ground
   | Property (Koan -> Sumti -> Int)
 
@@ -21,9 +21,9 @@ pyramidWithSpots (Koan.Pyramid z _) i j =
 sumtiInKoan :: Koan -> [Sumti]
 sumtiInKoan k =
   Ground :
-  fmap ConcreteColour [Blue, Green, Red, Yellow]
+  fmap SumtiColour [Blue, Green, Red, Yellow]
   ++
-  fmap ConcreteSize [Small, Medium, Large]
+  fmap SumtiSize [Small, Medium, Large]
   ++
   do
     (i, part) <- enumerate k

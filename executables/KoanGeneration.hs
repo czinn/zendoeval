@@ -40,19 +40,36 @@ randomKoan n = do
     index <- getRandomR (0, length koans - 1)
     return $ koans !! index
 
--- Returns Nothing if a counterexample could not be found. Returns an error if
--- either of the rules produced an error while evaluating koans.
-counterexample :: RandomGen g => (Koan -> OrError Bool) -> (Koan -> OrError Bool) -> Rand g (OrError (Maybe Koan))
-counterexample a b =
-  let sizes = replicate 10000 2 ++ replicate 10000 3 ++ replicate 5000 4 ++ replicate 2500 5 in
-  loop sizes
+-- A list of koans to check for counterexamples
+counterexampleList :: RandomGen g => [Rand g Koan]
+counterexampleList =
+  let sizes = replicate 5000 2 ++ replicate 4000 3 ++ replicate 2000 4 ++ replicate 1000 5 ++ replicate 100 6 in
+  map randomKoan sizes
+
+-- Searchs the list for a counterexmaple. Returns Nothing if a counterexample
+-- could not be found. Returns an error if either of the rules produced an
+-- error while evaluating koans.
+counterexampleFromList :: RandomGen g =>
+    [Rand g Koan] ->
+    (Koan -> OrError Bool) ->
+    (Koan -> OrError Bool) ->
+    Rand g (OrError (Maybe Koan))
+counterexampleFromList list a b =
+  loop list
   where loop [] = return $ Right Nothing
-        loop (n:ns) = do
-          k <- randomKoan n
+        loop (k:ks) = do
+          k <- k
           case (do
             evalA <- a k
             evalB <- b k
             return $ evalA == evalB) of
             Right False -> return $ Right $ Just k
-            Right True -> loop ns
+            Right True -> loop ks
             Left e -> return $ Left e
+
+-- Searches a sequence of random counterexamples.
+counterexample :: RandomGen g =>
+    (Koan -> OrError Bool) ->
+    (Koan -> OrError Bool) ->
+    Rand g (OrError (Maybe Koan))
+counterexample = counterexampleFromList counterexampleList

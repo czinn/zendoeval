@@ -169,9 +169,9 @@ cnita _ _ = False
 
 cpana k ss = gapru k ss && pencu k ss
 
-nilbra k [ConcreteSize z, p] = sizeSelbri z k [p]
+nilbra k [SumtiSize z, p] = sizeSelbri z k [p]
 nilbra _ _ = False
-skari k [p, ConcreteColour c] = colourSelbri c k [p]
+skari k [p, SumtiColour c] = colourSelbri c k [p]
 skari _ _ = False
 
 zmadu k [x, y, Property p] = p k x > p k y
