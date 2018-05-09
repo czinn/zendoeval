@@ -71,8 +71,7 @@ evalQuant :: Maybe (Int -> JboProp)
           -> BindfulTerm Sumti (OrError Bool)
 evalQuant d p k f =
   fmap (fmap f . sequence . catMaybes) . sequence .
-  fmap (\sumti ->
-    withBoundVarBinding sumti (\n ->
+  fmap (flip withBoundVarBinding (\n ->
       do
       inDomain <- case d of
         Nothing -> return (Right True)
@@ -81,8 +80,7 @@ evalQuant d p k f =
         Right True -> fmap Just $ evalProp (p n) k
         Right False -> return Nothing
         Left e -> return $ Just $ Left e
-      )
-  ) $ sumtiInKoan k
+      )) $ sumtiInKoan k
 
 evalProp :: JboProp -> Koan -> BindfulTerm Sumti (OrError Bool)
 evalProp (Not p) k = fmap (fmap not) (evalProp p k)
